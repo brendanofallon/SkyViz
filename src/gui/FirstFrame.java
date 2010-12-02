@@ -20,9 +20,17 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
-public class FirstFrame extends JFrame {
+import app.SkyVizApp;
 
+/**
+ * A small frame that users can use to specify which trace and trees file we should read the data from. 
+ * @author brendan
+ *
+ */
+public class FirstFrame extends JFrame {
+	
 	public FirstFrame() {
+		
         try {
         	String plaf = UIManager.getSystemLookAndFeelClassName();
         	String gtkLookAndFeel = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
@@ -103,10 +111,19 @@ public class FirstFrame extends JFrame {
 		pack();
 	}
 	
+	/**
+	 * Called when done button is pressed, we just read whatever's in the appropriate fields and have skyVizApp show the main frame
+	 */
 	protected void done() {
-		
+		File traceFile = new File(traceFileField.getText());
+		File treesFile = new File(treesFileField.getText());
+		SkyVizApp.showSkyVizFrame(traceFile, treesFile);
+		this.dispose();
 	}
 
+	/**
+	 * Cancel everything and dispose of this frame
+	 */
 	protected void cancel() {
 		this.dispose();
 	}

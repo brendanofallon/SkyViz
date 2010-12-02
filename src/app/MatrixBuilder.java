@@ -23,12 +23,12 @@ public class MatrixBuilder {
 	
 	protected boolean useLogScale = true;
 	
-	protected double maxDepth = 5000; //Maximum depth of matrix
+	protected double maxDepth = 25000; //Maximum depth of matrix
 	protected double maxSize = 1e7; //Maximum population size that appears in matrix
 	protected double minSize = 10000; //Minimum size that appears in matrix = must be > 0 for log scale
 	
-	protected int depthBins = 250;
-	protected int sizeBins = 500;
+	protected int depthBins = 200;
+	protected int sizeBins = 400;
 	
 	protected double[][] matrix; //Stores histograms of sizes at particular depths
 	

@@ -2,32 +2,42 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import app.MatrixBuilder;
+
 
 public class SkyVizFrame extends JFrame {
 
+	protected File traceFile;
+	protected File treesFile;
+	protected MatrixBuilder matBuilder;
 	
-	public SkyVizFrame() {
-		
+	public SkyVizFrame(File traceFile, File treesFile) {
+		this.traceFile = traceFile;
+		this.treesFile = treesFile;
 		initComponents();
-		double[][] mat = new double[5][5];
-		for(int i=0; i<mat.length; i++) {
-			for(int j=0; j<mat[0].length; j++) {
-				mat[i][j] = i*j/(25.0);
-			}
-		}
-		matrixPanel.setMatrix(mat);
-		matrixPanel.repaint();
-		
+		buildMatrix();
+		matrixPanel.setMatrix(matBuilder.getMatrix());
 		setPreferredSize(new Dimension(400, 500));
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setLocationRelativeTo(null);
 		pack();
 		setVisible(true);
+	}
+	
+	private void buildMatrix() {
+		matBuilder = new MatrixBuilder(traceFile, treesFile);
+		try {
+			matBuilder.computeRateFunctions();
+		} catch (IOException e) {
+			System.err.println("There was an error constructing the rate functions : " + e);
+		}
 	}
 	
 	public void setMatrix(double[][] mat) {

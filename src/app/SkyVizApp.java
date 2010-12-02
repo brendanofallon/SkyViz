@@ -14,10 +14,13 @@ public class SkyVizApp {
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
             	FirstFrame firstFrame = new FirstFrame();
-            	
-            	//skyViz = new SkyVizFrame();
+    
             }
         });
+	}
+	
+	public static void showSkyVizFrame(File traceFile, File treesFile) {
+		skyViz = new SkyVizFrame(traceFile, treesFile);
 	}
 	
 	public static SkyVizFrame getFrame() {
