@@ -30,6 +30,11 @@ public class SkyVizFrame extends JFrame {
 		setVisible(true);
 	}
 	
+	public void setMatrix(double[][] mat) {
+		matrixPanel.setMatrix(mat);
+		matrixPanel.repaint();
+	}
+	
 	private void initComponents() {
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BorderLayout());

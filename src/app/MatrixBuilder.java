@@ -101,6 +101,7 @@ public class MatrixBuilder {
 		
 	}
 	
+	
 	/**
 	 * Read through the tree and trace files, computing a demographicFunction for each line / tree, and 
 	 * tally the result in the matrix. This takes a long time. 
@@ -408,6 +409,11 @@ public class MatrixBuilder {
 		currentTree = treeBuf.readLine();
 	}
 	
+	/**
+	 * Using the currentTree and currentState fields, construct and return a new DemoFunction representing the skyline
+	 * @return a DemoFunction representing the skyline given by the currentState and currentTree fields, or null if currentState or currentTree not valid
+	 * @throws IOException
+	 */
 	private DemoFunction getFunctionForState() throws IOException {	
 	
 		if (currentState == null || currentTree == null)

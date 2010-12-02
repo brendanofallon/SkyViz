@@ -26,6 +26,10 @@ public class MatrixPanel extends JPanel {
 	private double[][] matrix;
 	private Color[] colors;
 	
+	private Color zeroColor = new Color(0, 0, 0);
+	private Color oneColor = new Color(255, 255, 0);
+	private int totalColors = 10;
+	
 	public void setMatrix(double[][] mat) {
 		this.matrix = mat;
 	}
@@ -46,12 +50,14 @@ public class MatrixPanel extends JPanel {
 	}
 
 	private void createColors() {
-		colors = new Color[5];
-		colors[0] = Color.black;
-		colors[1] = Color.blue;
-		colors[2] = Color.green;
-		colors[3] = Color.orange;
-		colors[4] = Color.red;
+		colors = new Color[totalColors];
+		double rStep = (oneColor.getRed()-zeroColor.getRed()) /(double)( totalColors-1.0);
+		double gStep = (oneColor.getGreen()-zeroColor.getGreen()) /(double)( totalColors-1.0);
+		double bStep = (oneColor.getBlue()-zeroColor.getBlue()) /(double)( totalColors-1.0);
+		
+		for(int i=0; i<colors.length; i++) {
+			colors[i] = new Color((int)(rStep*i+zeroColor.getRed()), (int)(gStep*i+zeroColor.getGreen()), (int)(bStep*i+zeroColor.getBlue())); 
+		}
 		
 	}
 
@@ -68,7 +74,7 @@ public class MatrixPanel extends JPanel {
 		
 		for(int i=0; i<xCells; i++) {
 			for(int j=0; j<yCells; j++) {
-				int colIndex = (int)(colors.length*matrix[i][j]); 
+				int colIndex = (int)(colors.length*matrix[i][j]*50); 
 				g2d.setColor(colors[colIndex] );
 				g2d.fillRect((int)(yPadding+(double)i/(double)xCells*matWidth), (int)((double)j/(double)yCells*matHeight), cellWidth, cellHeight);
 			}
