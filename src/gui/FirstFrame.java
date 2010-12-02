@@ -6,21 +6,40 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 public class FirstFrame extends JFrame {
 
 	public FirstFrame() {
-	
-		setPreferredSize(new Dimension(400, 500));
+        try {
+        	String plaf = UIManager.getSystemLookAndFeelClassName();
+        	String gtkLookAndFeel = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+        	//Attempt to avoid metal look and feel
+        	if (plaf.contains("metal")) {
+
+        		UIManager.setLookAndFeel(gtkLookAndFeel);
+        	}
+
+        	UIManager.setLookAndFeel( plaf );
+        }
+        catch (Exception e) {
+            System.err.println("Could not set look and feel, exception : " + e.toString());
+        }
+        
+		initComponents();
+		setPreferredSize(new Dimension(400, 400));
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setLocationRelativeTo(null);
 		pack();
@@ -31,10 +50,11 @@ public class FirstFrame extends JFrame {
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-		mainPanel.add(new JLabel("To begin, choose input files :"));
+		mainPanel.add(new JLabel("<html><strong>To begin, choose input files :<strong></html>"));
 		
 		traceFileField = new JTextField("Enter trace file name");
-		traceFileField.setPreferredSize(new Dimension(100, 25));
+		traceFileField.setPreferredSize(new Dimension(200, 25));
+		traceFileField.setHorizontalAlignment(JTextField.RIGHT);
 		traceButton = new JButton("Choose");
 		traceButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -44,28 +64,73 @@ public class FirstFrame extends JFrame {
 		mainPanel.add( makePanel(new JLabel("Trace file:"), traceFileField, traceButton));
 		
 		treesFileField = new JTextField("Enter tree file name");
-		treesFileField.setPreferredSize(new Dimension(100, 25));
+		treesFileField.setPreferredSize(new Dimension(200, 25));
+		treesFileField.setHorizontalAlignment(JTextField.RIGHT);
 		treesButton = new JButton("Choose");
 		treesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				chooseTreeFile();
 			}
 		});
-		mainPanel.add( makePanel(new JLabel("Trace file:"), traceFileField, traceButton));
+		mainPanel.add( makePanel(new JLabel("Trees file:"), treesFileField, treesButton));
 		
+		JButton cancel = new JButton("Cancel");
+		cancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cancel();
+			}
+		});
+		
+		
+		JButton done = new JButton("Done");
+		done.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				done();
+			}
+		});
+		
+		
+		JPanel bottom = new JPanel();
+		bottom.setLayout(new BoxLayout(bottom, BoxLayout.X_AXIS));
+		bottom.add(cancel);
+		bottom.add(Box.createGlue());
+		bottom.add(done);
+		
+		mainPanel.add(Box.createVerticalGlue());
+		mainPanel.add(bottom);
 		this.getContentPane().add(mainPanel);
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		pack();
 	}
 	
-	protected void chooseTreeFile() {
-		// TODO Auto-generated method stub
+	protected void done() {
 		
 	}
 
+	protected void cancel() {
+		this.dispose();
+	}
+
+	protected void chooseTreeFile() {
+		if (fileChooser==null) {
+			fileChooser = new JFileChooser();
+		}
+		int n = fileChooser.showOpenDialog(this);
+		if (n == fileChooser.APPROVE_OPTION) {
+			File treeFile = fileChooser.getSelectedFile();
+			treesFileField.setText(treeFile.getAbsolutePath());
+		}
+	}
+
 	protected void chooseTraceFile() {
-		// TODO Auto-generated method stub
-		
+		if (fileChooser==null) {
+			fileChooser = new JFileChooser();
+		}
+		int n = fileChooser.showOpenDialog(this);
+		if (n == fileChooser.APPROVE_OPTION) {
+			File traceFile = fileChooser.getSelectedFile();
+			traceFileField.setText(traceFile.getAbsolutePath());
+		}
 	}
 
 	private JPanel makePanel(Component compOne, Component comp2) {
@@ -87,6 +152,7 @@ public class FirstFrame extends JFrame {
 		return panel;
 	}
 	
+	private JFileChooser fileChooser;
 	private JTextField traceFileField;
 	private JButton traceButton;
 	private JTextField treesFileField;
