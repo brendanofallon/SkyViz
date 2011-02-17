@@ -1,5 +1,12 @@
 package app;
 
+import gui.SkyVizFrame;
+
+import java.awt.Polygon;
+import java.awt.Shape;
+import java.awt.geom.Path2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,6 +17,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.JFrame;
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingWorker;
 
 /**
  * The main workhorse class, given a file containing pop 
@@ -24,15 +35,16 @@ public class MatrixBuilder {
 	protected boolean useLogScale = true;
 	
 	protected double maxDepth = 25000; //Maximum depth of matrix
-	protected double maxSize = 1e7; //Maximum population size that appears in matrix
-	protected double minSize = 10000; //Minimum size that appears in matrix = must be > 0 for log scale
+	protected double maxSize = 2e7; //Maximum population size that appears in matrix
+	protected double minSize = 1000; //Minimum size that appears in matrix = must be > 0 for log scale
 	
-	protected int depthBins = 200;
-	protected int sizeBins = 400;
+	protected int depthBins = 250;
+	protected int sizeBins = 250;
 	
 	protected double[][] matrix; //Stores histograms of sizes at particular depths
 	
-	protected int burnin = 1000; //This is in LINES READ, not MCMC states
+	protected int burnin = 500; //This is in LINES READ, not MCMC states
+	protected int maxStep = 3500000;
 	
 	protected int popSizeOffset; //First column at which popSize value appears
 	protected int indicatorOffset; //First column at which indicator appears
@@ -43,6 +55,9 @@ public class MatrixBuilder {
 	
 	String currentTree;
 	String currentState;
+	
+	//List of things to be notified of as we read lines from the files. 
+	List<PropertyChangeListener> propertyListeners = new ArrayList<PropertyChangeListener>(5);
 	
 	public MatrixBuilder(File traceFile, File treesFile) {
 		try {
@@ -57,40 +72,6 @@ public class MatrixBuilder {
 			advanceToTrees(treeBuf); //Advance the tree-reading buffer to the first tree
 			DemoFunction dFunc = getFunctionForState();
 			
-//			createMatrix();
-//			
-//			int max = 10000;
-//			int count = 0;
-//			
-//			while(dFunc != null && count<max) {
-////				if (count>0 && count%300 == 0) {
-////					dFunc.emit();
-////					addFunctionToMatrix(dFunc);
-////					emitMatrix();
-////					System.exit(0);
-////				}
-//				advanceStep(traceBuf, treeBuf);
-//				if (currentState == null || currentTree==null) {
-//					System.out.println("Could not read current state or tree, aborting.");
-//					break;
-//				}
-//				if (count > burnin) {
-//					dFunc = getFunctionForState(); 
-//					if (dFunc != null)
-//						addFunctionToMatrix(dFunc); //Add this demographic function to the matrix
-//					else {
-//						System.out.println("Could not read demographic function... emitting matrix and aborting");
-//						emitMatrix();
-//						
-//					}
-//				}
-//				count++;
-//				if (count % 100 == 0)
-//					System.out.println("Counting state " + count);
-//			}
-//			
-//			emitMatrix();
-			
 			
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not open files : " + e);
@@ -101,26 +82,50 @@ public class MatrixBuilder {
 		
 	}
 	
+//	public void beginRateFunctionComputation(SkyVizFrame parentFrame) {
+//		BuilderWorker worker = new BuilderWorker(parentFrame);
+//		worker.execute();
+//	}
 	
 	/**
+	 * Add the given listener to the list of things to be notified of when something changes. 
+	 * @param listener
+	 */
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		propertyListeners.add(listener);
+	}
+	
+	/**
+	 * Notify all property listeners that something has happened.
+	 * @param property The property that changed
+	 * @param oldValue
+	 * @param newValue
+	 */
+	protected void firePropertyChangeEvent(String property, Object oldValue, Object newValue) {
+		PropertyChangeEvent propEvent = new PropertyChangeEvent(this, property, oldValue, newValue);
+		for(PropertyChangeListener listener : propertyListeners) {
+			listener.propertyChange(propEvent);
+		}
+	}
+	/**
 	 * Read through the tree and trace files, computing a demographicFunction for each line / tree, and 
-	 * tally the result in the matrix. This takes a long time. 
+	 * tally the result in the matrix. This takes a long time. In general applications should call beginRateFunctionComputation
+	 * which runs the code in this function in a background thread. 
 	 * @throws IOException
 	 */
 	public void computeRateFunctions() throws IOException {
-		int max = 10000;
 		int count = 0;
+		
+		Histogram hist = new Histogram(100, 0, 0.01);
+		BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/brendan/ratios.csv"));
 		
 		createMatrix();
 		DemoFunction dFunc = getFunctionForState();
 		
-		while(dFunc != null && count<max) {
-//			if (count>0 && count%300 == 0) {
-//				dFunc.emit();
-//				addFunctionToMatrix(dFunc);
-//				emitMatrix();
-//				System.exit(0);
-//			}
+		while(dFunc != null && count<maxStep) {
+			if (count>0 && count%100 == 0) {
+				firePropertyChangeEvent("progress", count-100, count);
+			}
 			advanceStep(traceBuf, treeBuf);
 			if (currentState == null || currentTree==null) {
 				System.out.println("Could not read current state or tree, aborting.");
@@ -133,14 +138,27 @@ public class MatrixBuilder {
 				else {
 					System.out.println("Could not read demographic function... emitting matrix and aborting");
 					emitMatrix();
-					
+		
 				}
+				
+				//Erase this code later
+				double popSizeMax = dFunc.getSize(5000);
+				double popSizeMin = dFunc.getSize(500);
+				writer.write(popSizeMax + "\t" + popSizeMin + "\t" + popSizeMin / popSizeMax + "\n");
+				
+				
 			}
 			count++;
 			if (count % 100 == 0)
 				System.out.println("Counting state " + count);
 		}
+		System.out.println("Done computing, now normalizing matrix");
 		normalizeMatrix();
+		
+
+		emitMatrix(); //Debugging, remove this later
+		
+		writer.close();
 	}
 	
 	public double[][] getMatrix() {
@@ -178,13 +196,35 @@ public class MatrixBuilder {
 		return Math.sqrt(sumSq);
 	}
 	
+	public Path2D generateConfPolygon(double percentage) {
+		Path2D path = new Path2D.Double();
+		
+		//Special case: First point
+		path.moveTo(0, approxUpperCPD(0, percentage));
+		//First pass, we go up values in time adding y-values along top of shape
+		for(int i=0; i<depthBins; i++) {
+			double time = (double)i/(double)depthBins*maxDepth; 
+			path.lineTo(time, approxUpperCPD(i, percentage));
+		}
+		
+		//Now go back, drawing lower boundary
+		for(int i=depthBins-1; i>=0; i--) {
+			double time = (double)i/(double)depthBins*maxDepth; 
+			path.lineTo(time, approxLowerCPD(i, percentage));
+		}
+		
+		path.lineTo(0, approxUpperCPD(0, percentage)); //Close the shape
+		path.closePath();
+		return path;
+	}
+	
 	public double approxLowerCPD(int timeBin, double percentage) {
 		//int timeBin = (int)Math.floor(time / maxDepth * depthBins);
 		double sum = 0;
 				
 		for(int i=0; i<sizeBins; i++) {
 			sum += matrix[timeBin][i];
-			if (sum > (1.0-percentage))
+			if (sum > (1.0-percentage)/2.0)
 				return sizeForBin(i);
 		}
 		
@@ -198,7 +238,7 @@ public class MatrixBuilder {
 				
 		for(int i=sizeBins-1; i>=0; i--) {
 			sum += matrix[timeBin][i];
-			if (sum > (1.0-percentage))
+			if (sum > (1.0-percentage)/2.0)
 				return sizeForBin(i);
 		}
 		
@@ -268,9 +308,9 @@ public class MatrixBuilder {
 		System.out.println();
 		
 		
-		for(int i=0; i<depthBins; i++) {
-			System.out.println((double)i/(double)depthBins*maxDepth+ "\t" + meanSizeAtDepth( (double)i/(double)depthBins*maxDepth) + "\t" + stdSizeAtDepth((double)i/(double)depthBins*maxDepth) + "\t" + findMPESize(i));  
-		}
+//		for(int i=0; i<depthBins; i++) {
+//			System.out.println((double)i/(double)depthBins*maxDepth+ "\t" + meanSizeAtDepth( (double)i/(double)depthBins*maxDepth) + "\t" + stdSizeAtDepth((double)i/(double)depthBins*maxDepth) + "\t" + findMPESize(i));  
+//		}
 	}
 
 	private void addFunctionToMatrix(DemoFunction dFunc) {
@@ -404,6 +444,12 @@ public class MatrixBuilder {
 		currentState = traceBuf.readLine();
 	}
 
+	/**
+	 * Advance each buffer by one line and store the new line for each in currentState and currentTree
+	 * @param traceBuf
+	 * @param treeBuf
+	 * @throws IOException
+	 */
 	private void advanceStep(BufferedReader traceBuf, BufferedReader treeBuf) throws IOException {
 		currentState = traceBuf.readLine();
 		currentTree = treeBuf.readLine();
@@ -472,22 +518,46 @@ public class MatrixBuilder {
 		Arrays.sort(times);
 		return times;
 	}
+
+//	class BuilderWorker extends SwingWorker<Void, Void> {
+//
+//		SkyVizFrame parentFrame;
+//		
+//		public BuilderWorker(SkyVizFrame svFrame) {
+//			this.parentFrame = svFrame;
+//		}
+//
+//
+//		public Void doInBackground() {	           
+//			setProgress(0);
+//
+//			try {
+//				computeRateFunctions();
+//			} catch (IOException e) {
+//				System.err.println("Error encountered while reading files : \n" + e);
+//			}	
+//
+//			return null;
+//		}
+//
+//
+//		public void done() {
+//			if (parentFrame != null) {
+//				parentFrame.setMatrix(getMatrix());
+//			}
+//		}
+//	}
 	
-	public static void main(String[] args) {
-//		File traceFile = new File(args[0]);
-//		File treesFile = new File(args[1]);
-		
-		File traceFile = new File("/Users/brendan/mito_analysis/everyone/newperu_all_priors_combo4.log");
-		File treesFile = new File("/Users/brendan/mito_analysis/everyone/newperu_all_priors_combo4.trees");
-	
-		MatrixBuilder sv = new MatrixBuilder(traceFile, treesFile);
-		try {
-			sv.computeRateFunctions();
-			sv.emitMatrix();
-			sv.writeMatrixToFile(new File("/Users/brendan/mito_analysis/everyone/bspData.csv"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public double getMinY() {
+		return minSize;
 	}
+
+	public double getMaxX() {
+		return maxDepth;
+	}
+	
+	public double getMaxY() {
+		return maxSize;
+	}
+	
 }

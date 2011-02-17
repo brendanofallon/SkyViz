@@ -6,6 +6,11 @@ import java.io.IOException;
 import gui.FirstFrame;
 import gui.SkyVizFrame;
 
+/**
+ * A mostly-static class containing a few functions for top level application startup and control. 
+ * @author brendan
+ *
+ */
 public class SkyVizApp {
 
 	private static SkyVizFrame skyViz = null;
@@ -14,7 +19,6 @@ public class SkyVizApp {
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
             	FirstFrame firstFrame = new FirstFrame();
-    
             }
         });
 	}
@@ -31,20 +35,8 @@ public class SkyVizApp {
 	
 	public static void main(String[] args) {
 		//Parse args...?
+		
 		launchApplication();
 		
-//		File traceFile = new File("/Users/brendan/mito_analysis/everyone/newperu_all_priors_combo4.log");
-//		File treesFile = new File("/Users/brendan/mito_analysis/everyone/newperu_all_priors_combo4.trees");
-//	
-//		MatrixBuilder builder = new MatrixBuilder(traceFile, treesFile);
-//		try {
-//			builder.computeRateFunctions();
-//			skyViz.setMatrix(builder.getMatrix());
-//			//builder.emitMatrix();
-//			//builder.writeMatrixToFile(new File("/Users/brendan/mito_analysis/everyone/bspData.csv"));
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 }

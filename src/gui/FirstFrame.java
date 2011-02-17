@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 
 import javax.swing.BorderFactory;
@@ -16,7 +18,9 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
@@ -54,11 +58,17 @@ public class FirstFrame extends JFrame {
 		setVisible(true);
 	}
 	
+	/**
+	 * Create GUI components
+	 */
 	private void initComponents() {
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-		mainPanel.add(new JLabel("<html><strong>To begin, choose input files :<strong></html>"));
+		JLabel mainLabel = new JLabel("<html><strong>To begin, choose input files :<strong></html>");
+		mainLabel.setAlignmentX(LEFT_ALIGNMENT);
+		mainLabel.setHorizontalTextPosition(SwingConstants.LEFT);
+		mainPanel.add(mainLabel);
 		
 		traceFileField = new JTextField("Enter trace file name");
 		traceFileField.setPreferredSize(new Dimension(200, 25));
@@ -103,7 +113,7 @@ public class FirstFrame extends JFrame {
 		bottom.add(cancel);
 		bottom.add(Box.createGlue());
 		bottom.add(done);
-		
+		bottom.setAlignmentX(LEFT_ALIGNMENT);
 		mainPanel.add(Box.createVerticalGlue());
 		mainPanel.add(bottom);
 		this.getContentPane().add(mainPanel);
@@ -156,6 +166,7 @@ public class FirstFrame extends JFrame {
 		
 		panel.add(compOne);
 		panel.add(comp2);
+		panel.setAlignmentX(LEFT_ALIGNMENT);
 		return panel;
 	}
 	
@@ -166,13 +177,17 @@ public class FirstFrame extends JFrame {
 		panel.add(compOne);
 		panel.add(comp2);
 		panel.add(comp3);
+
+		panel.setAlignmentX(LEFT_ALIGNMENT);
 		return panel;
 	}
+	
 	
 	private JFileChooser fileChooser;
 	private JTextField traceFileField;
 	private JButton traceButton;
 	private JTextField treesFileField;
 	private JButton treesButton;
+
 }
 
