@@ -34,17 +34,17 @@ public class MatrixBuilder {
 	
 	protected boolean useLogScale = true;
 	
-	protected double maxDepth = 25000; //Maximum depth of matrix
+	protected double maxDepth = 20000; //Maximum depth of matrix
 	protected double maxSize = 2e7; //Maximum population size that appears in matrix
-	protected double minSize = 1000; //Minimum size that appears in matrix = must be > 0 for log scale
+	protected double minSize = 10000; //Minimum size that appears in matrix = must be > 0 for log scale
 	
-	protected int depthBins = 250;
-	protected int sizeBins = 250;
+	protected int depthBins = 400;
+	protected int sizeBins = 400;
 	
 	protected double[][] matrix; //Stores histograms of sizes at particular depths
 	
 	protected int burnin = 500; //This is in LINES READ, not MCMC states
-	protected int maxStep = 3500000;
+	protected int maxStep = 3690000;
 	
 	protected int popSizeOffset; //First column at which popSize value appears
 	protected int indicatorOffset; //First column at which indicator appears
@@ -86,6 +86,26 @@ public class MatrixBuilder {
 //		BuilderWorker worker = new BuilderWorker(parentFrame);
 //		worker.execute();
 //	}
+	
+	/**
+	 * Translate t values from 0..maxDepth coordinates to 0..1 coordinates
+	 */
+	private double translateT(double t) {
+		double minTime = 0;
+		return (t-minTime)/(maxDepth-minTime);
+	}
+	
+	/**
+	 * Translate size values from minSize...maxSize into 0..1. 
+	 * @param x
+	 * @return
+	 */
+	private double translateSize(double x) {
+		if (useLogScale)
+			return (Math.log(x) - Math.log(minSize))/(Math.log(maxSize)-Math.log(minSize));
+		else
+			return (x-minSize)/(maxSize-minSize);
+	}
 	
 	/**
 	 * Add the given listener to the list of things to be notified of when something changes. 
@@ -142,11 +162,9 @@ public class MatrixBuilder {
 				}
 				
 				//Erase this code later
-				double popSizeMax = dFunc.getSize(5000);
+				double popSizeMax = dFunc.getSize(2500);
 				double popSizeMin = dFunc.getSize(500);
 				writer.write(popSizeMax + "\t" + popSizeMin + "\t" + popSizeMin / popSizeMax + "\n");
-				
-				
 			}
 			count++;
 			if (count % 100 == 0)
@@ -196,25 +214,25 @@ public class MatrixBuilder {
 		return Math.sqrt(sumSq);
 	}
 	
-	public Path2D generateConfPolygon(double percentage) {
+	public Path2D generateScaledPolygon(double percentage) {
 		Path2D path = new Path2D.Double();
 		
 		//Special case: First point
-		path.moveTo(0, approxUpperCPD(0, percentage));
+		path.moveTo(translateT(0), translateSize(approxUpperCPD(0, percentage)));
 		//First pass, we go up values in time adding y-values along top of shape
 		for(int i=0; i<depthBins; i++) {
 			double time = (double)i/(double)depthBins*maxDepth; 
-			path.lineTo(time, approxUpperCPD(i, percentage));
+			path.lineTo(translateT(time), translateSize(approxUpperCPD(i, percentage)));
 		}
 		
 		//Now go back, drawing lower boundary
 		for(int i=depthBins-1; i>=0; i--) {
 			double time = (double)i/(double)depthBins*maxDepth; 
-			path.lineTo(time, approxLowerCPD(i, percentage));
+			path.lineTo(translateT(time), translateSize(approxLowerCPD(i, percentage)));
 		}
 		
-		path.lineTo(0, approxUpperCPD(0, percentage)); //Close the shape
-		path.closePath();
+		path.lineTo(translateT(0), translateSize(approxUpperCPD(0, percentage))); //Close the shape
+		path.closePath(); //Just in case
 		return path;
 	}
 	
@@ -558,6 +576,19 @@ public class MatrixBuilder {
 	
 	public double getMaxY() {
 		return maxSize;
+	}
+
+	/**
+	 * Takes a value in 0..1 range and scales it in a log-aware way to a value between minSize and maxSize
+	 * @param d
+	 * @return
+	 */
+	public double scaleY(double d) {
+		if (useLogScale) {
+			return Math.exp( d*(Math.log(maxSize)-Math.log(minSize)) + Math.log(minSize));
+		}
+		else
+			return d * (maxSize-minSize)+minSize;
 	}
 	
 }

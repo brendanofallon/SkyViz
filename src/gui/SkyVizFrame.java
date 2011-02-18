@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
@@ -24,43 +25,50 @@ public class SkyVizFrame extends JFrame implements PropertyChangeListener {
 	protected File treesFile;
 	protected MatrixBuilder matBuilder;
 	
+	AffineTransform trans = new AffineTransform();
+	
 	public SkyVizFrame(File traceFile, File treesFile) {
 		this.traceFile = traceFile;
 		this.treesFile = treesFile;
 		initComponents();
 		MatrixBuilder builder = buildMatrix();
 		
+		Path2D conf95 = builder.generateScaledPolygon(0.95);
+		Path2D conf90 = builder.generateScaledPolygon(0.9);
+		Path2D conf85 = builder.generateScaledPolygon(0.85);
+		Path2D conf80 = builder.generateScaledPolygon(0.8);
+		Path2D conf75 = builder.generateScaledPolygon(0.75);
+		Path2D conf70 = builder.generateScaledPolygon(0.7);
+		Path2D conf65 = builder.generateScaledPolygon(0.65);
+		Path2D conf60 = builder.generateScaledPolygon(0.60);
+
+		flipVertically(conf95);
+		flipVertically(conf90);
+		flipVertically(conf85);
+		flipVertically(conf80);
+		flipVertically(conf75);
+		flipVertically(conf70);
+		flipVertically(conf65);
+		flipVertically(conf60);
 		
-		//matrixPanel.setMatrix(matBuilder.getMatrix());
-		Path2D conf95 = builder.generateConfPolygon(0.95);
-				
-		AffineTransform trans = new AffineTransform();
 		
-		trans.setToTranslation(0, -builder.getMinY());
-		conf95 = (Path2D) trans.createTransformedShape(conf95);
+		matrixPanel.setShapes(new Shape[]{conf95, conf90, conf85, conf80, conf75, conf70, conf65, conf60});
 		
-		trans.setToScale(1.0/builder.getMaxX(), 1.0/(builder.getMaxY()));
-		conf95.transform(trans);
-		
-		//Now all coordinates are scaled to be in (0, 1)
-		
-		trans.setToScale(1, -1);
-		conf95.transform(trans);
-		
-		//Shape is now upside down, so that lower values appear toward the bottom of the figure
-		
-		trans.setToTranslation(0, 1);
-		conf95.transform(trans);
-		
-		matrixPanel.setShapes(new Shape[]{conf95});
-		
-		setPreferredSize(new Dimension(400, 500));
+		setPreferredSize(new Dimension(600, 500));
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setLocationRelativeTo(null);
 		pack();
 		setVisible(true);
 	}
 	
+	private void flipVertically(Path2D path) {
+
+		trans.setToScale(1, -1);
+		path.transform(trans);
+		
+		trans.setToTranslation(0, 1);
+		path.transform(trans);
+	}
 	
 	@Override
 	public void propertyChange(PropertyChangeEvent propEvent) {
@@ -75,6 +83,15 @@ public class SkyVizFrame extends JFrame implements PropertyChangeListener {
 	private MatrixBuilder buildMatrix() {
 		matBuilder = new MatrixBuilder(traceFile, treesFile);
 		matBuilder.addPropertyChangeListener(this);
+		matrixPanel.setMatrixBuilder(matBuilder);
+		
+		String fileTitle = traceFile.getName();
+		int rPos = fileTitle.lastIndexOf(".");
+		if (rPos > 0) {
+			fileTitle = fileTitle.substring(0, rPos);
+		}
+		matrixPanel.setMainTitle(fileTitle);
+		
 		//matBuilder.beginRateFunctionComputation(this);
 		try {
 			matBuilder.computeRateFunctions();
@@ -97,5 +114,6 @@ public class SkyVizFrame extends JFrame implements PropertyChangeListener {
 
 	
 	private MatrixPanel matrixPanel;
+
 	
 }
