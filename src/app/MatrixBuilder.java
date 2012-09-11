@@ -1,9 +1,5 @@
 package app;
 
-import gui.SkyVizFrame;
-
-import java.awt.Polygon;
-import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -17,10 +13,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.swing.JFrame;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingWorker;
 
 /**
  * The main workhorse class, given a file containing pop 
@@ -136,8 +128,8 @@ public class MatrixBuilder {
 	public void computeRateFunctions() throws IOException {
 		int count = 0;
 		
-		Histogram hist = new Histogram(100, 0, 0.01);
-		BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/brendan/ratios.csv"));
+		//Histogram hist = new Histogram(0, 0.01, 100);
+		//BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/brendan/ratios.csv"));
 		
 		createMatrix();
 		DemoFunction dFunc = getFunctionForState();
@@ -162,9 +154,9 @@ public class MatrixBuilder {
 				}
 				
 				//Erase this code later
-				double popSizeMax = dFunc.getSize(2500);
-				double popSizeMin = dFunc.getSize(500);
-				writer.write(popSizeMax + "\t" + popSizeMin + "\t" + popSizeMin / popSizeMax + "\n");
+				//double popSizeMax = dFunc.getSize(2500);
+				//double popSizeMin = dFunc.getSize(500);
+				//writer.write(popSizeMax + "\t" + popSizeMin + "\t" + popSizeMin / popSizeMax + "\n");
 			}
 			count++;
 			if (count % 100 == 0)
@@ -176,7 +168,7 @@ public class MatrixBuilder {
 
 		emitMatrix(); //Debugging, remove this later
 		
-		writer.close();
+		//writer.close();
 	}
 	
 	public double[][] getMatrix() {
